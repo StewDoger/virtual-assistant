@@ -31,27 +31,25 @@ async def handle_kembali_ke_menu(update: Update, context: ContextTypes.DEFAULT_T
 
 # Fungsi untuk menampilkan daftar produk dari MongoDB
 async def handle_lihat_produk(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    produk_keyboard = []
-
     try:
-        # Ambil daftar produk dari database
-        for produk in products_collection.find():
-            if 'name' in produk and 'description' in produk:
-                produk_keyboard.append([InlineKeyboardButton(produk['name'], callback_data=f"produk_{produk['_id']}")])
+        # Pastikan update.message ada
+        if update.message:
+            # Ambil produk dari MongoDB dengan async query
+            produk_cursor = products_collection.find()  # Ini adalah AsyncIOMotorCursor
+            produk_list = await produk_cursor.to_list(length=None)  # Convert cursor ke list
 
-        # Tambahkan tombol kembali ke menu utama
-        produk_keyboard.append([InlineKeyboardButton("Kembali ke Menu Utama", callback_data='menu_utama')])
-        reply_markup = InlineKeyboardMarkup(produk_keyboard)
-
-        # Tampilkan daftar produk atau pesan jika tidak ada produk
-        if produk_keyboard:
-            if update.callback_query:
-                await update.callback_query.edit_message_text("Pilih produk untuk melihat detailnya:", reply_markup=reply_markup)
+            if produk_list:
+                # Kirim pesan dengan daftar produk
+                produk_names = [produk['nama'] for produk in produk_list]  # Ambil nama produk dari daftar
+                produk_text = "\n".join(produk_names)
+                await update.message.reply_text(f"Berikut daftar produk kami:\n{produk_text}")
             else:
-                await update.message.reply_text("Pilih produk untuk melihat detailnya:", reply_markup=reply_markup)
+                await update.message.reply_text("Maaf, tidak ada produk yang tersedia.")
         else:
-            await update.message.reply_text("Tidak ada produk yang tersedia.")
+            # Jika update.message tidak ada, log kesalahan
+            print("Error: Tidak ada pesan yang diterima.")
     except Exception as e:
+        # Tangani kesalahan dengan memberikan balasan yang sesuai
         await update.message.reply_text("Terjadi kesalahan saat mengambil daftar produk. Silakan coba lagi nanti.")
         print(f"Error: {e}")
 
