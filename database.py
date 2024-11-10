@@ -6,10 +6,10 @@ import motor.motor_asyncio
 load_dotenv()
 
 # Retrieve the MongoDB URI from environment variables
-MONGO_URI = os.getenv('MONGO_URI')
+mongo_uri = os.getenv('MONGO_URI')
 
 # Set up MongoDB client
-client = motor.motor_asyncio.AsyncIOMotorClient(MONGO_URI)
+client = motor.motor_asyncio.AsyncIOMotorClient(mongo_uri)
 db = client['chatbot']
 products_collection = db['products']
 
