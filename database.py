@@ -10,7 +10,7 @@ MONGO_URI = os.getenv('MONGO_URI')
 
 # Set up MongoDB client
 client = motor.motor_asyncio.AsyncIOMotorClient(MONGO_URI)
-db = client.get_database()  # Use default db if none specified
+db = client['chatbot']
 products_collection = db['products']
 
 async def get_all_products():
