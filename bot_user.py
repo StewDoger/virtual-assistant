@@ -23,7 +23,8 @@ if __name__ == '__main__':
     application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
 
     # Handler untuk tombol lihat produk
-    application.add_handler(CallbackQueryHandler(handle_lihat_produk, pattern='^lihat_produk$'))
+    callback_handler = CallbackQueryHandler(handle_lihat_produk, pattern='lihat_produk')
+    application.add_handler(callback_handler)
 
     # Handler untuk tombol produk yang akan menampilkan detail produk
     application.add_handler(CallbackQueryHandler(handle_produk_detail, pattern='^produk_'))

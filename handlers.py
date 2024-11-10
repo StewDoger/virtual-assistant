@@ -1,5 +1,5 @@
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
-from telegram.ext import ContextTypes
+from telegram.ext import ContextTypes, CallbackContext, CallbackQueryHandler
 from bson import ObjectId
 from database import products_collection
 from constants import cara_bayar, cara_pembelian
@@ -30,29 +30,6 @@ async def handle_kembali_ke_menu(update: Update, context: ContextTypes.DEFAULT_T
     await query.edit_message_text('Silakan pilih opsi di bawah ini:', reply_markup=reply_markup)
 
 # Fungsi untuk menampilkan daftar produk dari MongoDB
-async def handle_lihat_produk(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    print(f"Received update: {update}")  # Menambahkan log untuk melihat update yang diterima
-    if update.message:
-        # Ambil produk dari MongoDB dengan async query
-        try:
-            produk_cursor = products_collection.find()  # Ini adalah AsyncIOMotorCursor
-            produk_list = await produk_cursor.to_list(length=None)  # Convert cursor ke list
-
-            if produk_list:
-                # Kirim pesan dengan daftar produk
-                produk_names = [produk['nama'] for produk in produk_list]  # Ambil nama produk dari daftar
-                produk_text = "\n".join(produk_names)
-                await update.message.reply_text(f"Berikut daftar produk kami:\n{produk_text}")
-            else:
-                await update.message.reply_text("Maaf, tidak ada produk yang tersedia.")
-        except Exception as e:
-            await update.message.reply_text("Terjadi kesalahan saat mengambil daftar produk. Silakan coba lagi nanti.")
-            print(f"Error: {e}")
-    else:
-        print("Error: Tidak ada pesan yang diterima.")
-
-
-# Fungsi untuk menampilkan detail produk yang dipilih
 async def handle_lihat_produk(update: Update, context: CallbackContext):
     # Cek apakah update adalah callback_query
     if update.callback_query:
@@ -82,6 +59,28 @@ async def handle_lihat_produk(update: Update, context: CallbackContext):
 
         else:
             await update.callback_query.answer("Opsi yang dipilih tidak dikenali.")
+
+# Fungsi untuk menampilkan detail produk yang dipilih
+async def handle_produk_detail(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    query = update.callback_query
+    await query.answer()
+    produk_id = query.data.split('_')[1]
+
+    try:
+        produk = products_collection.find_one({"_id": ObjectId(produk_id)})
+        if produk:
+            detail_produk = f"{produk['name']}\n\nDeskripsi: {produk['description']}\nHarga: Rp {produk['price']:,}\nStok: {produk['stock']} buah"
+            keyboard = [
+                [InlineKeyboardButton("Cara Pembelian", callback_data='cara_pembelian')],
+                [InlineKeyboardButton("Kembali ke Menu Utama", callback_data='menu_utama')]
+            ]
+            reply_markup = InlineKeyboardMarkup(keyboard)
+            await query.edit_message_text(text=detail_produk, reply_markup=reply_markup)
+        else:
+            await query.edit_message_text(text="Detail produk tidak ditemukan.")
+    except Exception as e:
+        await query.edit_message_text(text="Terjadi kesalahan saat mengambil detail produk. Silakan coba lagi nanti.")
+        print(f"Error: {e}")
 
 # Fungsi untuk menampilkan cara pembayaran
 async def handle_cara_bayar(update: Update, context: ContextTypes.DEFAULT_TYPE):
