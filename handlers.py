@@ -42,6 +42,9 @@ async def handle_lihat_produk(update: Update, context: ContextTypes.DEFAULT_TYPE
                     for produk in produk_list
                 ]
 
+                # Menambahkan tombol 'Kembali ke Menu Utama'
+                keyboard.append([InlineKeyboardButton("Kembali ke Menu Utama", callback_data="menu_utama")])
+
                 reply_markup = InlineKeyboardMarkup(keyboard)
                 # Menimpa pesan yang ada dengan daftar produk
                 await update.callback_query.message.edit_text(
