@@ -1,7 +1,7 @@
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
 from telegram.ext import ContextTypes
 from bson import ObjectId
-from database import products_collection
+from database import products_collection, has_products
 from constants import cara_bayar, cara_pembelian
 
 # Fungsi untuk menampilkan opsi awal kepada pengguna
@@ -34,25 +34,33 @@ async def handle_lihat_produk(update: Update, context: ContextTypes.DEFAULT_TYPE
     produk_keyboard = []
 
     try:
-        # Ambil daftar produk dari database
-        for produk in products_collection.find():
-            if 'name' in produk and 'description' in produk:
-                produk_keyboard.append([InlineKeyboardButton(produk['name'], callback_data=f"produk_{produk['_id']}")])
+        # Cek apakah ada produk di database
+        if await has_products():
+            # Ambil daftar produk dari database
+            async for produk in products_collection.find():
+                if 'name' in produk and 'description' in produk:
+                    produk_keyboard.append([InlineKeyboardButton(produk['name'], callback_data=f"produk_{produk['_id']}")])
 
-        # Tambahkan tombol kembali ke menu utama
-        produk_keyboard.append([InlineKeyboardButton("Kembali ke Menu Utama", callback_data='menu_utama')])
-        reply_markup = InlineKeyboardMarkup(produk_keyboard)
+            # Tambahkan tombol kembali ke menu utama
+            produk_keyboard.append([InlineKeyboardButton("Kembali ke Menu Utama", callback_data='menu_utama')])
+            reply_markup = InlineKeyboardMarkup(produk_keyboard)
 
-        # Tampilkan daftar produk atau pesan jika tidak ada produk
-        if produk_keyboard:
+            # Tampilkan daftar produk
             if update.callback_query:
                 await update.callback_query.edit_message_text("Pilih produk untuk melihat detailnya:", reply_markup=reply_markup)
-            else:
+            elif update.message:
                 await update.message.reply_text("Pilih produk untuk melihat detailnya:", reply_markup=reply_markup)
         else:
-            await update.message.reply_text("Tidak ada produk yang tersedia.")
+            if update.callback_query:
+                await update.callback_query.edit_message_text("Tidak ada produk yang tersedia.")
+            elif update.message:
+                await update.message.reply_text("Tidak ada produk yang tersedia.")
     except Exception as e:
-        await update.message.reply_text("Terjadi kesalahan saat mengambil daftar produk. Silakan coba lagi nanti.")
+        error_message = "Terjadi kesalahan saat mengambil daftar produk. Silakan coba lagi nanti."
+        if update.callback_query:
+            await update.callback_query.edit_message_text(error_message)
+        elif update.message:
+            await update.message.reply_text(error_message)
         print(f"Error: {e}")
 
 # Fungsi untuk menampilkan detail produk yang dipilih
