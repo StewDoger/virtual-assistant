@@ -17,8 +17,3 @@ async def get_all_products():
     """Retrieve all products from the collection."""
     products = await products_collection.find().to_list(length=None)
     return products
-
-async def has_products():
-    """Check if there are any products in the collection."""
-    count = await products_collection.count_documents({})
-    return count > 0
