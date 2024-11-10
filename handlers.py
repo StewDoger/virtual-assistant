@@ -1,7 +1,7 @@
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
-from telegram.ext import ContextTypes, CallbackContext, CallbackQueryHandler
+from telegram.ext import ContextTypes, CallbackQueryHandler
 from bson import ObjectId
-from database import products_collection
+from database import get_all_products, products_collection
 from constants import cara_bayar, cara_pembelian
 
 # Fungsi untuk menampilkan opsi awal kepada pengguna
@@ -30,35 +30,22 @@ async def handle_kembali_ke_menu(update: Update, context: ContextTypes.DEFAULT_T
     await query.edit_message_text('Silakan pilih opsi di bawah ini:', reply_markup=reply_markup)
 
 # Fungsi untuk menampilkan daftar produk dari MongoDB
-async def handle_lihat_produk(update: Update, context: CallbackContext):
-    # Cek apakah update adalah callback_query
-    if update.callback_query:
-        # Log callback query untuk debugging
-        print(f"Received callback query: {update.callback_query.data}")
+async def handle_lihat_produk(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if update.callback_query and update.callback_query.data == 'lihat_produk':
+        try:
+            produk_list = await get_all_products()  # Fetch products using the async function
 
-        # Pastikan bahwa data callback_query adalah 'lihat_produk'
-        if update.callback_query.data == 'lihat_produk':
-            try:
-                # Ambil produk dari MongoDB dengan async query
-                produk_cursor = products_collection.find()  # AsyncIOMotorCursor
-                produk_list = await produk_cursor.to_list(length=None)  # Convert cursor ke list
+            if produk_list:
+                produk_names = [produk['nama'] for produk in produk_list]  # Ambil nama produk
+                produk_text = "\n".join(produk_names)
+                await update.callback_query.message.reply_text(f"Berikut daftar produk kami:\n{produk_text}")
+            else:
+                await update.callback_query.message.reply_text("Maaf, tidak ada produk yang tersedia.")
+        except Exception as e:
+            await update.callback_query.message.reply_text("Terjadi kesalahan saat mengambil daftar produk. Silakan coba lagi nanti.")
+            print(f"Error: {e}")
 
-                if produk_list:
-                    # Kirim pesan dengan daftar produk
-                    produk_names = [produk['nama'] for produk in produk_list]  # Ambil nama produk
-                    produk_text = "\n".join(produk_names)
-                    await update.callback_query.message.reply_text(f"Berikut daftar produk kami:\n{produk_text}")
-                else:
-                    await update.callback_query.message.reply_text("Maaf, tidak ada produk yang tersedia.")
-            except Exception as e:
-                await update.callback_query.message.reply_text("Terjadi kesalahan saat mengambil daftar produk. Silakan coba lagi nanti.")
-                print(f"Error: {e}")
-
-            # Menghindari bot untuk mengulang respons callback dengan 'answer_callback_query'
-            await update.callback_query.answer()
-
-        else:
-            await update.callback_query.answer("Opsi yang dipilih tidak dikenali.")
+        await update.callback_query.answer()
 
 # Fungsi untuk menampilkan detail produk yang dipilih
 async def handle_produk_detail(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -67,7 +54,8 @@ async def handle_produk_detail(update: Update, context: ContextTypes.DEFAULT_TYP
     produk_id = query.data.split('_')[1]
 
     try:
-        produk = products_collection.find_one({"_id": ObjectId(produk_id)})
+        # Fetch the product using ObjectId
+        produk = await products_collection.find_one({"_id": ObjectId(produk_id)})
         if produk:
             detail_produk = f"{produk['name']}\n\nDeskripsi: {produk['description']}\nHarga: Rp {produk['price']:,}\nStok: {produk['stock']} buah"
             keyboard = [

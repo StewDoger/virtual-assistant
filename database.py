@@ -10,10 +10,14 @@ MONGO_URI = os.getenv('MONGO_URI')
 
 # Set up MongoDB client
 client = motor.motor_asyncio.AsyncIOMotorClient(MONGO_URI)
-db = client['chatbot']
+db = client.get_database()  # Use default db if none specified
 products_collection = db['products']
 
 async def get_all_products():
     """Retrieve all products from the collection."""
-    products = await products_collection.find().to_list(length=None)
-    return products
+    try:
+        products = await products_collection.find().to_list(length=None)
+        return products
+    except Exception as e:
+        print(f"Error while fetching products: {e}")
+        return []
