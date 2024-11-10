@@ -1,5 +1,5 @@
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
-from telegram.ext import ContextTypes
+from telegram.ext import ContextTypes, CallbackContext
 from bson import ObjectId
 from database import products_collection
 from constants import cara_bayar, cara_pembelian
@@ -73,16 +73,21 @@ async def handle_produk_detail(update: Update, context: ContextTypes.DEFAULT_TYP
         print(f"Error: {e}")
 
 # Fungsi untuk menampilkan cara pembayaran
-async def handle_cara_bayar(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    keyboard = [[InlineKeyboardButton("Kembali ke Menu Utama", callback_data='menu_utama')]]
-    reply_markup = InlineKeyboardMarkup(keyboard)
-
-    if update.callback_query:
-        query = update.callback_query
+async def handle_cara_bayar(update: Update, context: CallbackContext):
+    query = update.callback_query
+    try:
+        # Jawab callback query secepat mungkin
         await query.answer()
-        await query.edit_message_text(text=cara_bayar, reply_markup=reply_markup)
-    elif update.message:
-        await update.message.reply_text(text=cara_bayar, reply_markup=reply_markup)
+
+        # Kode Anda untuk menangani "cara bayar" di sini
+        await query.edit_message_text(text="Berikut adalah cara pembayaran...")
+
+    except telegram.error.BadRequest as e:
+        # Menangani error jika query sudah kedaluwarsa atau ID query tidak valid
+        if "Query is too old" in str(e):
+            print("Callback query kedaluwarsa atau tidak valid.")
+        else:
+            print("Terjadi kesalahan:", e)
 
 # Fungsi untuk menampilkan cara pembelian
 async def handle_cara_pembelian(update: Update, context: ContextTypes.DEFAULT_TYPE):
