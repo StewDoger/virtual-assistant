@@ -36,7 +36,7 @@ async def handle_lihat_produk(update: Update, context: ContextTypes.DEFAULT_TYPE
             produk_list = await get_all_products()  # Fetch products using the async function
 
             if produk_list:
-                produk_names = [produk['nama'] for produk in produk_list]  # Ambil nama produk
+                produk_names = [produk['name'] for produk in produk_list]  # Ambil nama produk
                 produk_text = "\n".join(produk_names)
                 await update.callback_query.message.reply_text(f"Berikut daftar produk kami:\n{produk_text}")
             else:
