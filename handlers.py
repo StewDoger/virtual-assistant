@@ -30,29 +30,24 @@ async def handle_kembali_ke_menu(update: Update, context: ContextTypes.DEFAULT_T
     await query.edit_message_text('Silakan pilih opsi di bawah ini:', reply_markup=reply_markup)
 
 # Fungsi untuk menampilkan daftar produk dari MongoDB
-async def handle_lihat_produk(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    produk_keyboard = []
-
+async def handle_lihat_produk(update, context):
     try:
-        # Ambil daftar produk dari database
-        for produk in products_collection.find():
-            if 'name' in produk and 'description' in produk:
-                produk_keyboard.append([InlineKeyboardButton(produk['name'], callback_data=f"produk_{produk['_id']}")])
+        # Mengonversi hasil query ke dalam list agar dapat diiterasi
+        produk_list = await products_collection.find().to_list(length=None)
 
-        # Tambahkan tombol kembali ke menu utama
-        produk_keyboard.append([InlineKeyboardButton("Kembali ke Menu Utama", callback_data='menu_utama')])
-        reply_markup = InlineKeyboardMarkup(produk_keyboard)
+        # Melakukan iterasi pada produk_list
+        for produk in produk_list:
+            # Contoh, mencetak nama produk (pastikan field sesuai dengan yang ada di MongoDB)
+            await update.message.reply_text(f"Nama Produk: {produk.get('nama')}\nHarga: {produk.get('harga')}")
 
-        # Tampilkan daftar produk atau pesan jika tidak ada produk
-        if produk_keyboard:
-            if update.callback_query:
-                await update.callback_query.edit_message_text("Pilih produk untuk melihat detailnya:", reply_markup=reply_markup)
-            else:
-                await update.message.reply_text("Pilih produk untuk melihat detailnya:", reply_markup=reply_markup)
-        else:
-            await update.message.reply_text("Tidak ada produk yang tersedia.")
     except Exception as e:
-        await update.message.reply_text("Terjadi kesalahan saat mengambil daftar produk. Silakan coba lagi nanti.")
+        # Memastikan bahwa reply_text hanya dipanggil jika update.message tidak None
+        if update.message:
+            await update.message.reply_text("Terjadi kesalahan saat mengambil daftar produk. Silakan coba lagi nanti.")
+        else:
+            print("Error: update.message tidak ditemukan.")
+
+        # Logging error untuk debugging
         print(f"Error: {e}")
 
 # Fungsi untuk menampilkan detail produk yang dipilih
