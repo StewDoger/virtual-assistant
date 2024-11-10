@@ -30,15 +30,25 @@ async def handle_kembali_ke_menu(update: Update, context: ContextTypes.DEFAULT_T
     await query.edit_message_text('Silakan pilih opsi di bawah ini:', reply_markup=reply_markup)
 
 # Fungsi untuk menampilkan daftar produk dari MongoDB
+from telegram import InlineKeyboardButton, InlineKeyboardMarkup
+
+# Fungsi untuk menampilkan daftar produk dari MongoDB
 async def handle_lihat_produk(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.callback_query and update.callback_query.data == 'lihat_produk':
         try:
             produk_list = await get_all_products()  # Fetch products using the async function
 
             if produk_list:
-                produk_names = [produk['name'] for produk in produk_list]  # Ambil nama produk
-                produk_text = "\n".join(produk_names)
-                await update.callback_query.message.reply_text(f"Berikut daftar produk kami:\n{produk_text}")
+                # Membuat tombol inline berdasarkan produk
+                keyboard = [
+                    [InlineKeyboardButton(produk['name'], callback_data=f"produk_{produk['_id']}")]
+                    for produk in produk_list
+                ]
+
+                reply_markup = InlineKeyboardMarkup(keyboard)
+                await update.callback_query.message.reply_text(
+                    "Berikut daftar produk kami:", reply_markup=reply_markup
+                )
             else:
                 await update.callback_query.message.reply_text("Maaf, tidak ada produk yang tersedia.")
         except Exception as e:
