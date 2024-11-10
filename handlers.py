@@ -30,9 +30,6 @@ async def handle_kembali_ke_menu(update: Update, context: ContextTypes.DEFAULT_T
     await query.edit_message_text('Silakan pilih opsi di bawah ini:', reply_markup=reply_markup)
 
 # Fungsi untuk menampilkan daftar produk dari MongoDB
-from telegram import InlineKeyboardButton, InlineKeyboardMarkup
-
-# Fungsi untuk menampilkan daftar produk dari MongoDB
 async def handle_lihat_produk(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.callback_query and update.callback_query.data == 'lihat_produk':
         try:
@@ -46,13 +43,15 @@ async def handle_lihat_produk(update: Update, context: ContextTypes.DEFAULT_TYPE
                 ]
 
                 reply_markup = InlineKeyboardMarkup(keyboard)
-                await update.callback_query.message.reply_text(
+                # Menimpa pesan yang ada dengan daftar produk
+                await update.callback_query.message.edit_text(
                     "Berikut daftar produk kami:", reply_markup=reply_markup
                 )
             else:
-                await update.callback_query.message.reply_text("Maaf, tidak ada produk yang tersedia.")
+                # Jika tidak ada produk, ganti pesan dengan informasi yang sesuai
+                await update.callback_query.message.edit_text("Maaf, tidak ada produk yang tersedia.")
         except Exception as e:
-            await update.callback_query.message.reply_text("Terjadi kesalahan saat mengambil daftar produk. Silakan coba lagi nanti.")
+            await update.callback_query.message.edit_text("Terjadi kesalahan saat mengambil daftar produk. Silakan coba lagi nanti.")
             print(f"Error: {e}")
 
         await update.callback_query.answer()
