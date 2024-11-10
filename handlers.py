@@ -31,10 +31,10 @@ async def handle_kembali_ke_menu(update: Update, context: ContextTypes.DEFAULT_T
 
 # Fungsi untuk menampilkan daftar produk dari MongoDB
 async def handle_lihat_produk(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    try:
-        # Pastikan update.message ada
-        if update.message:
-            # Ambil produk dari MongoDB dengan async query
+    print(f"Received update: {update}")  # Menambahkan log untuk melihat update yang diterima
+    if update.message:
+        # Ambil produk dari MongoDB dengan async query
+        try:
             produk_cursor = products_collection.find()  # Ini adalah AsyncIOMotorCursor
             produk_list = await produk_cursor.to_list(length=None)  # Convert cursor ke list
 
@@ -45,13 +45,12 @@ async def handle_lihat_produk(update: Update, context: ContextTypes.DEFAULT_TYPE
                 await update.message.reply_text(f"Berikut daftar produk kami:\n{produk_text}")
             else:
                 await update.message.reply_text("Maaf, tidak ada produk yang tersedia.")
-        else:
-            # Jika update.message tidak ada, log kesalahan
-            print("Error: Tidak ada pesan yang diterima.")
-    except Exception as e:
-        # Tangani kesalahan dengan memberikan balasan yang sesuai
-        await update.message.reply_text("Terjadi kesalahan saat mengambil daftar produk. Silakan coba lagi nanti.")
-        print(f"Error: {e}")
+        except Exception as e:
+            await update.message.reply_text("Terjadi kesalahan saat mengambil daftar produk. Silakan coba lagi nanti.")
+            print(f"Error: {e}")
+    else:
+        print("Error: Tidak ada pesan yang diterima.")
+
 
 # Fungsi untuk menampilkan detail produk yang dipilih
 async def handle_produk_detail(update: Update, context: ContextTypes.DEFAULT_TYPE):
