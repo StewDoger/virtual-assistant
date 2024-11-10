@@ -116,19 +116,25 @@ async def respond_to_thanks(update, context):
 
 # Fungsi utama yang menjalankan semua rule secara berurutan
 async def handle_message(update, context):
-    if await greet_user(update, context):
-        return
-    if await show_products(update, context):
-        return
-    if await show_purchase_method(update, context):
-        return
-    if await show_payment_method(update, context):
-        return
-    if await show_specific_product(update, context):
-        return
+
     if await respond_to_thanks(update, context):
         return
+    # Cek untuk pesan sapaan
+    if await greet_user(update, context):
+        return
+    # Cek untuk melihat produk
+    if await show_products(update, context):
+        return
+    # Cek untuk cara pembelian
+    if await show_purchase_method(update, context):
+        return
+    # Cek untuk cara pembayaran
+    if await show_payment_method(update, context):
+        return
+    # Cek untuk produk spesifik
+    if await show_specific_product(update, context):
+        return
 
-    # Jika tidak ada aturan yang cocok
+    # Jika tidak ada aturan yang cocok, beri balasan umum
     await update.message.reply_text("Maaf, saya tidak mengerti. Apakah Anda ingin tahu tentang produk lain atau ada pertanyaan lainnya?")
     await show_options(update, context)
