@@ -1,5 +1,5 @@
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
-from telegram.ext import ContextTypes, CallbackContext
+from telegram.ext import ContextTypes
 from bson import ObjectId
 from database import products_collection
 from constants import cara_bayar, cara_pembelian
@@ -30,24 +30,29 @@ async def handle_kembali_ke_menu(update: Update, context: ContextTypes.DEFAULT_T
     await query.edit_message_text('Silakan pilih opsi di bawah ini:', reply_markup=reply_markup)
 
 # Fungsi untuk menampilkan daftar produk dari MongoDB
-async def handle_lihat_produk(update, context):
+async def handle_lihat_produk(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    produk_keyboard = []
+
     try:
-        # Mengonversi hasil query ke dalam list agar dapat diiterasi
-        produk_list = await products_collection.find().to_list(length=None)
+        # Ambil daftar produk dari database
+        for produk in products_collection.find():
+            if 'name' in produk and 'description' in produk:
+                produk_keyboard.append([InlineKeyboardButton(produk['name'], callback_data=f"produk_{produk['_id']}")])
 
-        # Melakukan iterasi pada produk_list
-        for produk in produk_list:
-            # Contoh, mencetak nama produk (pastikan field sesuai dengan yang ada di MongoDB)
-            await update.message.reply_text(f"Nama Produk: {produk.get('nama')}\nHarga: {produk.get('harga')}")
+        # Tambahkan tombol kembali ke menu utama
+        produk_keyboard.append([InlineKeyboardButton("Kembali ke Menu Utama", callback_data='menu_utama')])
+        reply_markup = InlineKeyboardMarkup(produk_keyboard)
 
-    except Exception as e:
-        # Memastikan bahwa reply_text hanya dipanggil jika update.message tidak None
-        if update.message:
-            await update.message.reply_text("Terjadi kesalahan saat mengambil daftar produk. Silakan coba lagi nanti.")
+        # Tampilkan daftar produk atau pesan jika tidak ada produk
+        if produk_keyboard:
+            if update.callback_query:
+                await update.callback_query.edit_message_text("Pilih produk untuk melihat detailnya:", reply_markup=reply_markup)
+            else:
+                await update.message.reply_text("Pilih produk untuk melihat detailnya:", reply_markup=reply_markup)
         else:
-            print("Error: update.message tidak ditemukan.")
-
-        # Logging error untuk debugging
+            await update.message.reply_text("Tidak ada produk yang tersedia.")
+    except Exception as e:
+        await update.message.reply_text("Terjadi kesalahan saat mengambil daftar produk. Silakan coba lagi nanti.")
         print(f"Error: {e}")
 
 # Fungsi untuk menampilkan detail produk yang dipilih
@@ -73,21 +78,16 @@ async def handle_produk_detail(update: Update, context: ContextTypes.DEFAULT_TYP
         print(f"Error: {e}")
 
 # Fungsi untuk menampilkan cara pembayaran
-async def handle_cara_bayar(update: Update, context: CallbackContext):
-    query = update.callback_query
-    try:
-        # Jawab callback query secepat mungkin
+async def handle_cara_bayar(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    keyboard = [[InlineKeyboardButton("Kembali ke Menu Utama", callback_data='menu_utama')]]
+    reply_markup = InlineKeyboardMarkup(keyboard)
+
+    if update.callback_query:
+        query = update.callback_query
         await query.answer()
-
-        # Kode Anda untuk menangani "cara bayar" di sini
-        await query.edit_message_text(text="Berikut adalah cara pembayaran...")
-
-    except telegram.error.BadRequest as e:
-        # Menangani error jika query sudah kedaluwarsa atau ID query tidak valid
-        if "Query is too old" in str(e):
-            print("Callback query kedaluwarsa atau tidak valid.")
-        else:
-            print("Terjadi kesalahan:", e)
+        await query.edit_message_text(text=cara_bayar, reply_markup=reply_markup)
+    elif update.message:
+        await update.message.reply_text(text=cara_bayar, reply_markup=reply_markup)
 
 # Fungsi untuk menampilkan cara pembelian
 async def handle_cara_pembelian(update: Update, context: ContextTypes.DEFAULT_TYPE):
