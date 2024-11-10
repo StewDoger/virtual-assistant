@@ -1,6 +1,7 @@
 import os
 from dotenv import load_dotenv
 import motor.motor_asyncio
+from pymongo import MongoClient
 
 # Load environment variables from .env file
 load_dotenv()
@@ -9,8 +10,8 @@ load_dotenv()
 mongo_uri = os.getenv('MONGO_URI')
 
 # Set up MongoDB client
-client = motor.motor_asyncio.AsyncIOMotorClient(mongo_uri)
-db = client['chatbot']
+client = MongoClient(mongo_uri)
+db = client.chatbot
 products_collection = db['products']
 
 async def get_all_products():
