@@ -12,39 +12,53 @@ def read_product_data(file_path):
         current_product = None
         product_info = {}
 
-        for line in lines:
-            line = line.strip()
+        i = 0
+        while i < len(lines):
+            line = lines[i].strip()
             if line == '':
+                i += 1
                 continue
-            if line.isupper():  # Nama produk biasanya menggunakan huruf kapital
+
+            if line.isupper():  # Product name in uppercase
                 if current_product:
                     product_data[current_product] = product_info
                 current_product = line
                 product_info = {'description': '', 'manfaat': [], 'cara pengolahan': []}
+                i += 1
+
             elif line.startswith('Deskripsi:'):
                 product_info['description'] = line.replace('Deskripsi:', '').strip()
+                i += 1
+
             elif line.startswith('Manfaat:'):
                 manfaat = []
-                while True:
-                    line = next(lines).strip()
-                    if line.startswith('Pengolahan:'):
-                        break
-                    if line:
-                        manfaat.append(line)
+                i += 1
+                while i < len(lines) and not lines[i].startswith('Pengolahan:'):
+                    manfaat_line = lines[i].strip()
+                    if manfaat_line:
+                        manfaat.append(manfaat_line)
+                    i += 1
                 product_info['manfaat'] = manfaat
+
             elif line.startswith('Pengolahan:'):
                 cara_pengolahan = []
-                while True:
-                    line = next(lines).strip()
-                    if line:
-                        cara_pengolahan.append(line)
+                i += 1
+                while i < len(lines) and lines[i].strip():
+                    cara_pengolahan_line = lines[i].strip()
+                    if cara_pengolahan_line:
+                        cara_pengolahan.append(cara_pengolahan_line)
+                    i += 1
                 product_info['cara pengolahan'] = cara_pengolahan
+
         if current_product:
             product_data[current_product] = product_info
+
     return product_data
 
+# Example usage:
 file_path = 'responses.txt'
 product_data = read_product_data(file_path)
+print(product_data)
 
 # Fungsi untuk menentukan sapaan berdasarkan waktu
 def get_greeting():
