@@ -1,22 +1,60 @@
 import random
-import json
 from datetime import datetime
 from telegram import Update
 from telegram.ext import ContextTypes
-from database import products_collection
 from handlers import show_options, handle_lihat_produk, handle_cara_pembelian, handle_cara_bayar
 
-# Load responses from JSON
-with open("responses.json", "r") as f:
-    responses = json.load(f)
+# Fungsi untuk membaca data produk dari file response.txt
+def read_product_data(file_path):
+    product_data = {}
+    with open(file_path, 'r', encoding='utf-8') as file:
+        lines = file.readlines()
+        current_product = None
+        product_info = {}
+
+        for line in lines:
+            line = line.strip()
+            if line == '':
+                continue
+            if line.isupper():  # Nama produk biasanya menggunakan huruf kapital
+                if current_product:
+                    product_data[current_product] = product_info
+                current_product = line
+                product_info = {'description': '', 'manfaat': [], 'cara pengolahan': []}
+            elif line.startswith('Deskripsi:'):
+                product_info['description'] = line.replace('Deskripsi:', '').strip()
+            elif line.startswith('Manfaat:'):
+                manfaat = []
+                while True:
+                    line = next(lines).strip()
+                    if line.startswith('Pengolahan:'):
+                        break
+                    if line:
+                        manfaat.append(line)
+                product_info['manfaat'] = manfaat
+            elif line.startswith('Pengolahan:'):
+                cara_pengolahan = []
+                while True:
+                    line = next(lines).strip()
+                    if line:
+                        cara_pengolahan.append(line)
+                product_info['cara pengolahan'] = cara_pengolahan
+        if current_product:
+            product_data[current_product] = product_info
+    return product_data
+
+file_path = 'responses.txt'
+product_data = read_product_data(file_path)
 
 # Fungsi untuk menentukan sapaan berdasarkan waktu
 def get_greeting():
     current_hour = datetime.now().hour
-    if 5 <= current_hour < 12:
+    if 1 <= current_hour < 12:
         return "Selamat pagi"
-    elif 12 <= current_hour < 18:
+    elif 12 <= current_hour < 16:
         return "Selamat siang"
+    elif 16 <= current_hour < 18:
+        return "Selamat sore"
     else:
         return "Selamat malam"
 
@@ -62,17 +100,17 @@ async def show_specific_product(update, context):
     user_message = update.message.text.lower()
     matched_product = None
 
-    # Mencari produk dalam user_message yang sesuai dengan yang ada di responses.json
-    for product in responses.keys():
-        if product in user_message:
+    # Mencari produk dalam user_message yang sesuai dengan yang ada di product_data
+    for product in product_data.keys():
+        if product.lower() in user_message:
             matched_product = product
             break
 
     if matched_product:
         # Ambil deskripsi produk, manfaat, dan cara pengolahan
-        product_description = responses[matched_product].get("description")
-        product_benefits = responses[matched_product].get("manfaat")
-        product_processing = responses[matched_product].get("cara pengolahan")
+        product_description = product_data[matched_product].get("description")
+        product_benefits = product_data[matched_product].get("manfaat")
+        product_processing = product_data[matched_product].get("cara pengolahan")
 
         # Jika user bertanya tentang manfaat
         if 'manfaat' in user_message or 'khasiat' in user_message:

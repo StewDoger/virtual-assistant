@@ -1,6 +1,7 @@
 {
     "cSpell.enableFiletypes": [
         "!json",
+        "!plaintext",
         "!python"
     ]
 }
